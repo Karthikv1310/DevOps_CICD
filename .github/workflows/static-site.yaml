@@ -10,6 +10,10 @@ permissions:
   contents: read
 
 jobs:
+
+  # -------------------------------
+  # Stage 1: Checkout
+  # -------------------------------
   stage-1-checkout:
     name: 1️⃣ Checkout Code
     runs-on: ubuntu-latest
@@ -18,6 +22,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+
+  # -------------------------------
+  # Stage 2: Validate HTML
+  # -------------------------------
   stage-2-validate-html:
     name: 2️⃣ Validate HTML Syntax
     runs-on: ubuntu-latest
@@ -27,13 +35,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install HTML tidy
-        run: sudo apt-get update && sudo apt-get install -y tidy
+      - name: Install HTML Tidy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tidy
 
-      - name: Validate HTML
+      - name: Validate HTML files
         run: |
           find ./docs -name '*.html' -exec tidy -qe {} \;
 
+
+  # -------------------------------
+  # Stage 3: Check Broken Links
+  # -------------------------------
   stage-3-check-links:
     name: 3️⃣ Check for Broken Links
     runs-on: ubuntu-latest
@@ -43,12 +57,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install linkchecker
-        run: sudo apt-get update && sudo apt-get install -y linkchecker
+      - name: Install Linkchecker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y linkchecker
 
-      - name: Check links
-        run: linkchecker ./docs/index.html || true
+      - name: Check links in website
+        run: |
+          linkchecker ./docs/index.html || true
 
+
+  # -------------------------------
+  # Stage 4: Build Preview
+  # -------------------------------
   stage-4-build-preview:
     name: 4️⃣ Build Preview
     runs-on: ubuntu-latest
@@ -58,8 +79,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create preview archive
-        run: zip -r site-preview.zip ./docs
+      - name: Create website preview
+        run: |
+          zip -r site-preview.zip ./docs
 
       - name: Upload preview artifact
         uses: actions/upload-artifact@v4
@@ -67,6 +89,10 @@ jobs:
           name: site-preview
           path: site-preview.zip
 
+
+  # -------------------------------
+  # Stage 5: Deploy to GitHub Pages
+  # -------------------------------
   stage-5-deploy:
     name: 5️⃣ Deploy to GitHub Pages
     runs-on: ubuntu-latest
@@ -79,9 +105,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Deploy site
+      - name: Deploy website
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs
           publish_branch: gh-pages
+          force_orphan: true
